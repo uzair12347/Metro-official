@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Payment</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #fffefe;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+ background-color:#085b72; 
+      padding: 30px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    input, button {
+      margin-top: 15px;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      width: 100%;
+    }
+
+    .btn {
+      background-color: #ffffff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      border: 2px solid black;
+    }
+
+    #accountDetails {
+      margin-top: 20px;
+      font-size: 15px;
+      background: #fbfafa;
+      padding: 12px;
+      border-radius: 8px;
+      color: #000000;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px;
+      }
+
+      input, button {
+        font-size: 15px;
+        padding: 10px;
+      }
+
+      #accountDetails {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp,
+    doc,
+    getDoc,
+    query,
+    where,
+    getDocs,
+    updateDoc,
+  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+  import {
+    getAuth,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBUiCellYmyU-a6ZCh0jo7O2UUe8GAV7s0",
+    authDomain: "mercedezbenz79-17037.firebaseapp.com",
+    projectId: "mercedezbenz79-17037",
+    storageBucket: "mercedezbenz79-17037.appspot.com",
+    messagingSenderId: "328685720441",
+    appId: "1:328685720441:web:ae850d085363ee4a1b55a8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth();
+
+function getQueryParam(param) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(param);
+}
+
+const planId = getQueryParam("planId");
+const methodRaw = getQueryParam("method");
+
+  const method = methodRaw ? methodRaw.toLowerCase() : null;
+  window.addEventListener("DOMContentLoaded", () => {
+  const accountDetailsDiv = document.getElementById("accountDetails");
+
+  if (method === "easypaisa") {
+    accountDetailsDiv.innerHTML = `
+      <strong>Jazz Cash:</strong><br>
+      03320217021<br>
+      Name: Asma
+    `;
+  } else if (method === "bank") {
+    accountDetailsDiv.innerHTML = `
+      <strong>Easy Paisa</strong><br>
+     Account Number : 03320217021<br>
+     Account Name : Aasma
+    `;
+  } else {
+    accountDetailsDiv.innerHTML = `<span style="color:red;">Unknown payment method selected.</span>`;
+  }
+
+  });
+
+
+  window.submitDetails = async function () {
+    const transactionId = document.getElementById("transactionId").value.trim();
+    const planId = localStorage.getItem("selectedPlanId");
+
+    if (!transactionId || !planId || !method) {
+      alert("Please enter Transaction ID and ensure plan and method are selected.");
+      return;
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("User not logged in");
+        return;
+      }
+
+      try {
+        // Save user plan request
+        await addDoc(collection(db, "UserPlanRequests"), {
+          transactionId,
+          planId,
+          paymentMethod: method,
+          status: "pending",
+          createdAt: serverTimestamp(),
+          userId: user.uid, // ✅ Save user's UID
+        });
+
+        // Check invitedBy
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const invitedBy = userData.invitedBy;
+
+          if (invitedBy) {
+            const inviterQuery = query(
+              collection(db, "users"),
+              where("referralCode", "==", invitedBy)
+            );
+            const inviterSnapshot = await getDocs(inviterQuery);
+
+            if (!inviterSnapshot.empty) {
+              const inviterDoc = inviterSnapshot.docs[0];
+              const inviterRef = doc(db, "users", inviterDoc.id);
+
+              await updateDoc(inviterRef, {
+                withdrawUnlocked: true,
+              });
+
+              console.log("✅ Inviter's withdrawUnlocked set to true.");
+            }
+          }
+        }
+
+        alert("Your recharge request has been submitted successfully. Please wait for admin approval.");
+        localStorage.removeItem("selectedPlanId");
+        localStorage.removeItem("selectedPaymentMethod");
+        window.location.href = "more.html";
+
+      } catch (error) {
+        console.error("❌ Error submitting payment:", error);
+        alert("❌ Error submitting payment. Please try again.");
+      }
+    });
+  };
+</script>
+
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Payment Details</h2>
+    <div id="accountDetails"></div>
+
+    <input type="text" id="transactionId" placeholder="Enter Transaction ID" />
+    <button class="btn" onclick="submitDetails()">Submit</button>
+  </div>
+</body>
+</html>

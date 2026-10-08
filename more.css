@@ -1,0 +1,136 @@
+/* --- General Styles --- */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f7f9fa;
+    color: #f8f6f6;
+}
+
+/* --- Slider Styles --- */
+.slider-wrapper {
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.slider-touch {
+    display: flex;
+    animation: slide 20s infinite linear;
+}
+
+.slide {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border-radius: 8px;
+}
+
+@keyframes slide {
+    0%, 10% { transform: translateX(0); }
+    20%, 30% { transform: translateX(-100%); }
+    40%, 50% { transform: translateX(-200%); }
+    60%, 70% { transform: translateX(-300%); }
+    80%, 90% { transform: translateX(0); }
+}
+
+/* --- Plan Section --- */
+.plan-container {
+    display: flex;             
+    flex-direction: column;    /* Cards vertically stacked */
+    gap: 16px;
+    padding: 0 16px 80px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.plan-card {
+    display: flex;             
+    align-items: flex-start;    
+    gap: 16px;              
+    background-color: #085b72;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(254, 251, 251, 0.1);
+    padding: 16px;
+    transition: transform 0.2s ease;
+    text-align: left;
+     max-width: 700px;    /* Card ki max width */
+    margin: 0 auto; 
+    border: black 3px solid;
+}
+
+.plan-card:hover {
+    transform: translateY(-4px);
+}
+
+.plan-card img {
+    width: 150px;           
+    height: 150px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.plan-card .content {
+    flex: 1;
+    display: flex;              
+    flex-direction: column;     /* Stack content vertically */
+    gap: 6px;                   /* Space between rows */
+}
+
+.plan-card .content h3 {
+    font-size: 18px;
+    margin: 0;
+    color: #ffffff;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.plan-card .content p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.plan-card .content a {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 100px;
+    background-color: #f4f7f8;
+    color: #085b72;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    align-self: flex-start;    /* Button left aligned */
+}
+
+
+
+/* --- Bottom Navigation --- */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #085b72;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid #ccc;
+    z-index: 1000;
+}
+
+.bottom-nav a {
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+}
+
+.bottom-nav img {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 2px;
+}

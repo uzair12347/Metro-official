@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Payment</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+     background-color:#085b72;     
+      padding: 30px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      margin-top: 15px;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      width: 100%;
+    }
+
+    .btn {
+      margin-top: 15px;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      width: 100%;
+      background-color: #fdfdfd;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      border: 2px solid black;
+    }
+
+    #accountDetails {
+      margin-top: 20px;
+      font-size: 15px;
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      line-height: 1.6;
+      color: #000000;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px;
+      }
+
+      input,
+      .btn {
+        font-size: 15px;
+        padding: 10px;
+      }
+
+      #accountDetails {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+
+  <!-- ✅ Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Payment Details</h2>
+    <div id="accountDetails"></div>
+
+    <input type="text" id="transactionId" placeholder="Enter Transaction ID" />
+    <button class="btn" onclick="submitDetails()">Submit</button>
+  </div>
+
+  <script>
+
+    let currentUser = null;
+
+    // ✅ Firebase Init
+    const firebaseConfig = {
+      apiKey: "AIzaSyBUiCellYmyU-a6ZCh0jo7O2UUe8GAV7s0",
+      authDomain: "mercedezbenz79-17037.firebaseapp.com",
+      projectId: "mercedezbenz79-17037",
+      storageBucket: "mercedezbenz79-17037.appspot.com",
+      messagingSenderId: "328685720441",
+      appId: "1:328685720441:web:ae850d085363ee4a1b55a8",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const method = localStorage.getItem("selectedPaymentMethod");
+    const planId = localStorage.getItem("selectedPlanId");
+
+    const accountDetailsDiv = document.getElementById("accountDetails");
+
+    if (method === "easypaisa") {
+      accountDetailsDiv.innerHTML = `
+        <strong>Jazz Cash:</strong><br>
+        0332-0217021<br>
+        Name: Asma
+      `;
+    } else if (method === "bank") {
+      accountDetailsDiv.innerHTML = `
+        <strong>Easy Paisa:</strong><br>
+        Account Number : 03320217021<br>
+        Account Name : Aasma
+      `;
+    } else {
+      accountDetailsDiv.innerHTML = `<span style="color:red;">Unknown payment method selected.</span>`;
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    currentUser = user;
+  } else {
+    alert("Please login first.");
+    window.location.href = "login.html";
+  }
+});
+
+
+    async function submitDetails() {
+      const transactionId = document.getElementById("transactionId").value.trim();
+
+      if (!transactionId || !method || !planId) {
+        alert("Please enter transaction ID and select a valid method.");
+        return;
+      }
+
+       if (!currentUser) {
+    alert("User not logged in.");
+    return;
+  }
+
+     
+        let planTitle = "Unknown Plan";
+    let price = 0;
+    let dailyIncome = 0;
+
+    const planDoc = await db.collection("plans").doc(planId).get();
+    if (planDoc.exists) {
+      const planData = planDoc.data();
+      planTitle = planData.planTitle || planData.title || "Plan";
+      price = planData.price || 0;
+      dailyIncome = planData.dailyIncome || 0;
+    }
+
+     try {
+        await db.collection("userPlanRequests").add({
+          transactionId,
+          method,
+          planId,
+          price,        
+          dailyIncome,   
+          status: "pending",
+          userId: currentUser.uid,
+           type: "recharge",
+          createdAt: firebase.firestore.Timestamp.now()
+        });
+
+        // 🔓 Unlock inviter's withdraw if applicable
+const userRef = db.collection("users").doc(currentUser.uid);
+const userSnap = await userRef.get();
+
+if (userSnap.exists) {
+  const userData = userSnap.data();
+
+  if (userData?.invitedBy) {
+    const inviterQuery = await db.collection("users")
+      .where("referralCode", "==", userData.invitedBy)
+      .limit(1)
+      .get();
+
+    if (!inviterQuery.empty) {
+      const inviterDoc = inviterQuery.docs[0];
+      const inviterRef = inviterDoc.ref;
+      const inviterData = inviterDoc.data();
+
+      if (!inviterData.withdrawUnlocked) {
+        await inviterRef.update({ withdrawUnlocked: true });
+      }
+    }
+  }
+}
+
+
+    const boughtPlan = {
+      title: planTitle,
+      price: price,
+      dailyIncome: dailyIncome,
+      date: new Date().toISOString()
+    };
+
+    let existingPlans = JSON.parse(localStorage.getItem("myPlans")) || [];
+    existingPlans.push(boughtPlan);
+    localStorage.setItem("myPlans", JSON.stringify(existingPlans));
+
+        alert("Your recharge request has been submitted successfully. Please wait for admin approval.");
+        localStorage.removeItem("selectedPlanId");
+        localStorage.removeItem("selectedPaymentMethod");
+        window.location.href = "more.html";
+      } catch (error) {
+        console.error("Error writing document:", error);
+        alert("❌ Failed to submit payment.");
+      }
+    }
+  </script>
+</body>
+</html>
