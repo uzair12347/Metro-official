@@ -152,7 +152,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    const MIN_WITHDRAW = 400;
+    const MIN_WITHDRAW = 300;
     let currentUser = null;
 
     auth.onAuthStateChanged(async (user) => {
