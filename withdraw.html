@@ -264,7 +264,7 @@ if (isFirstWithdraw) {
     .where("createdAt", "<=", endOfDay)
     .get();
 
-  if (snapshot.size >= 1) {
+  if (snapshot.size >= 2) {
     error.textContent = "You can only request withdraw 1 times per day.";
     return;
   }
